@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Facebook Clone</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwindcss.config = {
+      theme: {
+        extend: {
+          colors: {
+            fb: '#1877f2',
+            fbDark: '#166fe5',
+            fbLight: '#e7f3ff',
+            bgGray: '#f0f2f5',
+            card: '#ffffff',
+            textPrimary: '#050505',
+            textSecondary: '#65676b',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #bcc0c4; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #8a8d91; }
+    body { font-family: Segoe UI, Helvetica, Arial, sans-serif; }
+    .story-ring { background: linear-gradient(45deg, #1877f2, #00c6ff); padding: 2px; border-radius: 50%; }
+    .reaction-btn:hover { transform: scale(1.3); }
+    .nav-icon { position: relative; }
+    .nav-icon::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 3px; background: #1877f2; transition: width 0.2s; border-radius: 2px; }
+    .nav-icon.active::after { width: 100%; }
+    .sidebar-item:hover { background: #e4e6eb; }
+    .contact-item:hover { background: #e4e6eb; }
+    .like-animation { animation: likePop 0.3s ease; }
+    @keyframes likePop { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
+    .menu-dropdown { display: none; }
+    .menu-dropdown.show { display: block; }
+  </style>
+</head>
+<body class="bg-bgGray text-textPrimary">
+
+  <!-- Top Navbar -->
+  <nav class="bg-white shadow-sm fixed top-0 w-full z-50 h-14 flex items-center justify-between px-4">
+    <!-- Left -->
+    <div class="flex items-center gap-2 w-[280px]">
+      <svg viewBox="0 0 36 36" class="w-10 h-10 text-fb fill-current"><path d="M20.181 35.87C29.094 34.791 36 27.202 36 18c0-9.941-8.059-18-18-18S0 8.059 0 18c0 8.442 5.811 15.526 13.652 17.471L14 26h-4v-4.5h4V18c0-3.866 2.645-6 5.854-6 1.693 0 3.146.126 3.146.126V16h-1.693C18.361 16 17.5 17.08 17.5 18.188V21.5h4l-.643 4.5h-3.357v9.87z"/></svg>
+      <div class="relative">
+        <input type="text" placeholder="Search Facebook" class="bg-bgGray rounded-full py-2 px-4 pl-10 w-60 text-sm outline-none focus:ring-2 focus:ring-fb" />
+        <svg class="w-4 h-4 absolute left-3 top-3 text-textSecondary fill-current" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+      </div>
+    </div>
+
+    <!-- Center Navigation -->
+    <div class="flex items-center gap-2">
+      <button class="nav-icon active p-2 rounded-lg hover:bg-gray-100 w-[110px] flex justify-center">
+        <svg class="w-7 h-7 text-fb fill-current" viewBox="0 0 24 24"><path d="M9.464 2.293a1 1 0 0 1 1.072 0l9 5.5A1 1 0 0 1 20 8.8v11.2a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-6a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V8.8a1 1 0 0 1 .464-.993l9-5.5z"/></svg>
+      </button>
+      <button class="nav-icon p-2 rounded-lg hover:bg-gray-100 w-[110px] flex justify-center">
+        <svg class="w-7 h-7 text-textSecondary fill-current" viewBox="0 0 24 24"><path d="M12 5.5a1 1 0 0 1 1 1v4.5h4.5a1 1 0 1 1 0 2H13v4.5a1 1 0 1 1-2 0V13H6.5a1 1 0 1 1 0-2H11V6.5a1 1 0 0 1 1-1z"/><path fill-rule="evenodd" d="M1 12C1 5.925 5.925 1 12 1s11 4.925 11 11-4.925 11-11 11S1 18.075 1 12zm11-9a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/></svg>
+      </button>
+      <button class="nav-icon p-2 rounded-lg hover:bg-gray-100 w-[110px] flex justify-center relative">
+        <svg class="w-7 h-7 text-textSecondary fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM8 7a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm0 10c-2.67 0-5-1.34-5-3 0-.93.5-1.77 1.33-2.33C5.33 11.11 7 10.5 8 10.5c.34 0 .67.02 1 .06C8.27 11.28 8 12.11 8 13c0 1.66 2.67 3 5 3 .34 0 .67-.02 1-.06-.57.72-1.56 1.06-2.5 1.06H8zm8-3c0 .93-.5 1.77-1.33 2.33.66.28 1.43.67 1.33 1.67h-2c0 0 0 0 0 0H8v-1c0-1.66 2.67-3 5-3 .34 0 .67.02 1 .06V14zM16 7a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
+      </button>
+      <button class="nav-icon p-2 rounded-lg hover:bg-gray-100 w-[110px] flex justify-center relative">
+        <svg class="w-7 h-7 text-textSecondary fill-current" viewBox="0 0 24 24"><path d="M12 2.982c2.937 0 3.285.011 4.445.064a6.087 6.087 0 0 1 2.042.379 3.408 3.408 0 0 1 1.265.823 3.408 3.408 0 0 1 .823 1.265 6.087 6.087 0 0 1 .379 2.042c.053 1.16.064 1.508.064 4.445s-.011 3.285-.064 4.445a6.087 6.087 0 0 1-.379 2.042 3.643 3.643 0 0 1-2.088 2.088 6.087 6.087 0 0 1-2.042.379c-1.16.053-1.508.064-4.445.064s-3.285-.011-4.445-.064a6.087 6.087 0 0 1-2.042-.379 3.408 3.408 0 0 1-1.265-.823 3.408 3.408 0 0 1-.823-1.265 6.087 6.087 0 0 1-.379-2.042c-.053-1.16-.064-1.508-.064-4.445s.011-3.285.064-4.445a6.087 6.087 0 0 1 .379-2.042 3.408 3.408 0 0 1 .823-1.265 3.408 3.408 0 0 1 1.265-.823 6.087 6.087 0 0 1 2.042-.379c1.16-.053 1.508-.064 4.445-.064M12 1c-2.987 0-3.362.013-4.535.066a8.074 8.074 0 0 0-2.67.511 5.392 5.392 0 0 0-1.949 1.27 5.392 5.392 0 0 0-1.27 1.949 8.074 8.074 0 0 0-.51 2.67C1.012 8.638 1 9.013 1 12s.013 3.362.066 4.535a8.074 8.074 0 0 0 .511 2.67 5.392 5.392 0 0 0 1.27 1.949 5.392 5.392 0 0 0 1.949 1.27 8.074 8.074 0 0 0 2.67.51C8.638 22.988 9.013 23 12 23s3.362-.013 4.535-.066a8.074 8.074 0 0 0 2.67-.511 5.625 5.625 0 0 0 3.219-3.219 8.074 8.074 0 0 0 .51-2.67C22.988 15.362 23 14.987 23 12s-.013-3.362-.066-4.535a8.074 8.074 0 0 0-.511-2.67 5.392 5.392 0 0 0-1.27-1.949 5.392 5.392 0 0 0-1.949-1.27 8.074 8.074 0 0 0-2.67-.51C15.362 1.012 14.987 1 12 1zm0 5.351A5.649 5.649 0 1 0 17.649 12 5.649 5.649 0 0 0 12 6.351zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.32 1.32 0 1 0 1.32 1.32 1.32 1.32 0 0 0-1.32-1.32z"/></svg>
+      </button>
+      <button class="nav-icon p-2 rounded-lg hover:bg-gray-100 w-[110px] flex justify-center relative">
+        <svg class="w-7 h-7 text-textSecondary fill-current" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5l-4 3v-3H5a2 2 0 0 1-2-2V5zm2 0v10h10v2.17L17.17 15H19V5H5z"/></svg>
+        <span class="absolute top-1 right-8 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">3</span>
+      </button>
+    </div>
+
+    <!-- Right -->
+    <div class="flex items-center gap-2 w-[280px] justify-end">
+      <button class="w-10 h-10 bg-bgGray rounded-full flex items-center justify-center hover:bg-gray-200">
+        <svg class="w-6 h-6 fill-current" viewBox="0 0 20 20"><path d="M6 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>
+      </button>
+      <button class="w-10 h-10 bg-bgGray rounded-full flex items-center justify-center hover:bg-gray-200 relative">
+        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+      </button>
+      <button class="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-fb transition">
+        <img src="https://i.pravatar.cc/40?img=12" alt="profile" class="w-full h-full object-cover" />
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Layout -->
+  <div class="flex pt-14 max-w-[1920px] mx-auto">
+
+    <!-- Left Sidebar -->
+    <aside class="hidden lg:flex flex-col w-[280px] fixed left-0 top-14 h-[calc(100vh-56px)] overflow-y-auto p-2">
+      <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+        <img src="https://i.pravatar.cc/36?img=12" class="w-9 h-9 rounded-full" alt="" />
+        <span class="font-semibold text-[15px]">Md Saroar</span>
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+        <div class="w-9 h-9 flex items-center justify-center"><svg class="w-8 h-8 text-fb fill-current" viewBox="0 0 24 24"><path d="M12 5.5a1 1 0 0 1 1 1v4.5h4.5a1 1 0 1 1 0 2H13v4.5a1 1 0 1 1-2 0V13H6.5a1 1 0 1 1 0-2H11V6.5a1 1 0 0 1 1-1z"/><path fill-rule="evenodd" d="M1 12C1 5.925 5.925 1 12 1s11 4.925 11 11-4.925 11-11 11S1 18.075 1 12zm11-9a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/></svg></div>
+        <span class="text-[15px]">Friends</span>
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+        <div class="w-9 h-9 flex items-center justify-center"><svg class="w-8 h-8 text-fb fill-current" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+        <span class="text-[15px]">Groups</span>
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+        <div class="w-9 h-9 flex items-center justify-center"><svg class="w-8 h-8 text-blue-500 fill-current" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg></div>
+        <span class="text-[15px]">Marketplace</span>
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+        <div class="w-9 h-9 flex items-center justify-center"><svg class="w-8 h-8 text-red-500 fill-current" viewBox="0 0 24 24"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg></div>
+        <span class="text-[15px]">Watch</span>
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+        <div class="w-9 h-9 flex items-center justify-center"><svg class="w-8 h-8 text-yellow-500 fill-current" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg></div>
+        <span class="text-[15px]">Gaming</span>
+      </a>
+      <button class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition w-full">
+        <div class="w-9 h-9 bg-bgGray rounded-full flex items-center justify-center"><svg class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06z"/></svg></div>
+        <span class="text-[15px]">See more</span>
+      </button>
+
+      <div class="border-t border-gray-300 mt-2 pt-2">
+        <h3 class="text-textSecondary font-semibold text-[17px] px-2 mb-1">Your shortcuts</h3>
+        <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+          <img src="https://picsum.photos/seed/grp1/36/36" class="w-9 h-9 rounded-lg" alt="" />
+          <span class="text-[15px]">Web Developers BD</span>
+        </a>
+        <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+          <img src="https://picsum.photos/seed/grp2/36/36" class="w-9 h-9 rounded-lg" alt="" />
+          <span class="text-[15px]">JavaScript Community</span>
+        </a>
+        <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+          <img src="https://picsum.photos/seed/grp3/36/36" class="w-9 h-9 rounded-lg" alt="" />
+          <span class="text-[15px]">Next.js Bangladesh</span>
+        </a>
+      </div>
+
+      <div class="mt-2 px-2 text-[11px] text-textSecondary leading-relaxed">
+        Privacy · Terms · Advertising · Cookies · More · Meta © 2025
+      </div>
+    </aside>
+
+    <!-- Main Feed -->
+    <main class="flex-1 max-w-[680px] mx-auto px-4 py-4 lg:ml-[280px] lg:mr-[280px]">
+
+      <!-- Stories -->
+      <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+        <div class="min-w-[112px] h-[200px] rounded-xl bg-white shadow cursor-pointer hover:scale-[1.02] transition relative overflow-hidden">
+          <img src="https://i.pravatar.cc/112?img=12" class="w-full h-[130px] object-cover" alt="" />
+          <div class="absolute top-2 left-2 w-9 h-9 bg-fb rounded-full flex items-center justify-center border-4 border-white"><svg class="w-5 h-5 text-white fill-current" viewBox="0 0 20 20"><path d="M10 5a1 1 0 0 1 1 1v3h3a1 1 0 1 1 0 2h-3v3a1 1 0 1 1-2 0v-3H6a1 1 0 1 1 0-2h3V6a1 1 0 0 1 1-1z"/></svg></div>
+          <div class="absolute bottom-0 left-0 right-0 p-2 text-center text-xs font-semibold">Create story</div>
+        </div>
+        <div class="min-w-[112px] h-[200px] rounded-xl cursor-pointer hover:scale-[1.02] transition relative overflow-hidden">
+          <img src="https://picsum.photos/seed/s1/112/200" class="w-full h-full object-cover" alt="" />
+          <div class="absolute top-3 left-3"><div class="story-ring"><img src="https://i.pravatar.cc/32?img=1" class="w-9 h-9 rounded-full" alt="" /></div></div>
+          <div class="absolute bottom-2 left-2 right-2 text-white text-xs font-semibold drop-shadow-lg">Rahim Uddin</div>
+        </div>
+        <div class="min-w-[112px] h-[200px] rounded-xl cursor-pointer hover:scale-[1.02] transition relative overflow-hidden">
+          <img src="https://picsum.photos/seed/s2/112/200" class="w-full h-full object-cover" alt="" />
+          <div class="absolute top-3 left-3"><div class="story-ring"><img src="https://i.pravatar.cc/32?img=5" class="w-9 h-9 rounded-full" alt="" /></div></div>
+          <div class="absolute bottom-2 left-2 right-2 text-white text-xs font-semibold drop-shadow-lg">Fatema Akter</div>
+        </div>
+        <div class="min-w-[112px] h-[200px] rounded-xl cursor-pointer hover:scale-[1.02] transition relative overflow-hidden">
+          <img src="https://picsum.photos/seed/s3/112/200" class="w-full h-full object-cover" alt="" />
+          <div class="absolute top-3 left-3"><div class="story-ring"><img src="https://i.pravatar.cc/32?img=8" class="w-9 h-9 rounded-full" alt="" /></div></div>
+          <div class="absolute bottom-2 left-2 right-2 text-white text-xs font-semibold drop-shadow-lg">Karim Hossain</div>
+        </div>
+        <div class="min-w-[112px] h-[200px] rounded-xl cursor-pointer hover:scale-[1.02] transition relative overflow-hidden">
+          <img src="https://picsum.photos/seed/s4/112/200" class="w-full h-full object-cover" alt="" />
+          <div class="absolute top-3 left-3"><div class="story-ring"><img src="https://i.pravatar.cc/32?img=9" class="w-9 h-9 rounded-full" alt="" /></div></div>
+          <div class="absolute bottom-2 left-2 right-2 text-white text-xs font-semibold drop-shadow-lg">Nusrat Jahan</div>
+        </div>
+      </div>
+
+      <!-- Create Post -->
+      <div class="bg-white rounded-lg shadow mb-4 p-4">
+        <div class="flex items-center gap-3 mb-3">
+          <img src="https://i.pravatar.cc/40?img=12" class="w-10 h-10 rounded-full" alt="" />
+          <button id="openPostModal" class="flex-1 bg-bgGray rounded-full py-2.5 px-4 text-left text-textSecondary text-[17px] hover:bg-gray-200 transition">What's on your mind, Saroar?</button>
+        </div>
+        <div class="border-t border-gray-200 pt-3 flex justify-between">
+          <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition">
+            <svg class="w-7 h-7 text-red-500 fill-current" viewBox="0 0 24 24"><path d="M4 4h16v12H4V4zm2 10h12V6H6v8zm6-7l4 3.5L12 14 8 10.5 12 7z"/></svg>
+            <span class="text-textSecondary font-semibold text-[15px]">Live video</span>
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition">
+            <svg class="w-7 h-7 text-green-500 fill-current" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+            <span class="text-textSecondary font-semibold text-[15px]">Photo/video</span>
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition">
+            <svg class="w-7 h-7 text-yellow-500 fill-current" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+            <span class="text-textSecondary font-semibold text-[15px]">Feeling/activity</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Posts -->
+      <!-- Post 1 -->
+      <div class="bg-white rounded-lg shadow mb-4">
+        <div class="flex items-center justify-between p-4 pb-2">
+          <div class="flex items-center gap-3">
+            <img src="https://i.pravatar.cc/40?img=1" class="w-10 h-10 rounded-full" alt="" />
+            <div>
+              <p class="font-semibold text-[15px] hover:underline cursor-pointer">Rahim Uddin</p>
+              <div class="flex items-center gap-1 text-textSecondary text-[13px]">
+                <span>2h</span> · <svg class="w-3 h-3 fill-current" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.5 9H8V4h1.5v3.5H11.5V9z"/></svg>
+              </div>
+            </div>
+          </div>
+          <button class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 20 20"><path d="M6 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>
+          </button>
+        </div>
+        <p class="px-4 pb-3 text-[15px]">আজকের সূর্যাস্ত অনেক সুন্দর হয়েছে! 🌅 Dhaka city er rooftop theke dekhte onek valo lage.</p>
+        <img src="https://picsum.photos/seed/post1/680/400" class="w-full" alt="" />
+        <div class="px-4 py-2 flex items-center justify-between text-textSecondary text-[15px]">
+          <div class="flex items-center gap-1">
+            <span class="flex -space-x-1"><span class="w-5 h-5 bg-fb rounded-full flex items-center justify-center"><svg class="w-3 h-3 text-white fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span><span class="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center text-[10px]">😂</span></span>
+            <span>128</span>
+          </div>
+          <div class="flex gap-4">
+            <span class="hover:underline cursor-pointer">24 comments</span>
+            <span class="hover:underline cursor-pointer">5 shares</span>
+          </div>
+        </div>
+        <div class="border-t border-gray-200 mx-4 py-1 flex">
+          <button class="like-btn flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition" data-post="1">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+            <span class="font-semibold text-textSecondary">Like</span>
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="font-semibold text-textSecondary">Comment</span>
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+            <span class="font-semibold text-textSecondary">Share</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Post 2 -->
+      <div class="bg-white rounded-lg shadow mb-4">
+        <div class="flex items-center justify-between p-4 pb-2">
+          <div class="flex items-center gap-3">
+            <img src="https://i.pravatar.cc/40?img=5" class="w-10 h-10 rounded-full" alt="" />
+            <div>
+              <p class="font-semibold text-[15px] hover:underline cursor-pointer">Fatema Akter</p>
+              <div class="flex items-center gap-1 text-textSecondary text-[13px]">
+                <span>5h</span> · <svg class="w-3 h-3 fill-current" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.5 9H8V4h1.5v3.5H11.5V9z"/></svg>
+              </div>
+            </div>
+          </div>
+          <button class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 20 20"><path d="M6 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>
+          </button>
+        </div>
+        <p class="px-4 pb-3 text-[15px]">Just finished building my new portfolio website! 🚀 Used Next.js + Tailwind CSS. What do you guys think? Check it out and let me know! 💻✨</p>
+        <img src="https://picsum.photos/seed/post2/680/380" class="w-full" alt="" />
+        <div class="px-4 py-2 flex items-center justify-between text-textSecondary text-[15px]">
+          <div class="flex items-center gap-1">
+            <span class="flex -space-x-1"><span class="w-5 h-5 bg-fb rounded-full flex items-center justify-center"><svg class="w-3 h-3 text-white fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span><span class="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-[10px]">😍</span></span>
+            <span>256</span>
+          </div>
+          <div class="flex gap-4">
+            <span class="hover:underline cursor-pointer">48 comments</span>
+            <span class="hover:underline cursor-pointer">12 shares</span>
+          </div>
+        </div>
+        <div class="border-t border-gray-200 mx-4 py-1 flex">
+          <button class="like-btn flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition" data-post="2">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+            <span class="font-semibold text-textSecondary">Like</span>
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="font-semibold text-textSecondary">Comment</span>
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+            <span class="font-semibold text-textSecondary">Share</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Post 3 -->
+      <div class="bg-white rounded-lg shadow mb-4">
+        <div class="flex items-center justify-between p-4 pb-2">
+          <div class="flex items-center gap-3">
+            <img src="https://i.pravatar.cc/40?img=8" class="w-10 h-10 rounded-full" alt="" />
+            <div>
+              <p class="font-semibold text-[15px] hover:underline cursor-pointer">Karim Hossain</p>
+              <div class="flex items-center gap-1 text-textSecondary text-[13px]">
+                <span>8h</span> · <svg class="w-3 h-3 fill-current" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.5 9H8V4h1.5v3.5H11.5V9z"/></svg>
+              </div>
+            </div>
+          </div>
+          <button class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 20 20"><path d="M6 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>
+          </button>
+        </div>
+        <p class="px-4 pb-3 text-[15px]">Biryani party tonight! 🍚🔥 Everyone's invited! Who's coming? Drop a 🙋 below!</p>
+        <div class="grid grid-cols-2 gap-1 px-4 pb-2">
+          <img src="https://picsum.photos/seed/food1/340/250" class="w-full h-full object-cover rounded-lg" alt="" />
+          <img src="https://picsum.photos/seed/food2/340/250" class="w-full h-full object-cover rounded-lg" alt="" />
+        </div>
+        <div class="px-4 py-2 flex items-center justify-between text-textSecondary text-[15px]">
+          <div class="flex items-center gap-1">
+            <span class="flex -space-x-1"><span class="w-5 h-5 bg-fb rounded-full flex items-center justify-center"><svg class="w-3 h-3 text-white fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span></span>
+            <span>89</span>
+          </div>
+          <div class="flex gap-4">
+            <span class="hover:underline cursor-pointer">32 comments</span>
+            <span class="hover:underline cursor-pointer">8 shares</span>
+          </div>
+        </div>
+        <div class="border-t border-gray-200 mx-4 py-1 flex">
+          <button class="like-btn flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition" data-post="3">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+            <span class="font-semibold text-textSecondary">Like</span>
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="font-semibold text-textSecondary">Comment</span>
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 transition">
+            <svg class="w-6 h-6 fill-current text-textSecondary" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+            <span class="font-semibold text-textSecondary">Share</span>
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Right Sidebar -->
+    <aside class="hidden xl:flex flex-col w-[280px] fixed right-0 top-14 h-[calc(100vh-56px)] overflow-y-auto p-2">
+      <h3 class="text-textSecondary font-semibold text-[17px] px-2 mb-2">Sponsored</h3>
+      <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+        <img src="https://picsum.photos/seed/ad1/130/130" class="w-[130px] h-[130px] rounded-lg object-cover" alt="" />
+        <div>
+          <p class="text-[15px] font-semibold">Learn Web Development</p>
+          <p class="text-[13px] text-textSecondary">codinghero.com</p>
+        </div>
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 p-2 rounded-lg transition">
+        <img src="https://picsum.photos/seed/ad2/130/130" class="w-[130px] h-[130px] rounded-lg object-cover" alt="" />
+        <div>
+          <p class="text-[15px] font-semibold">Best Hosting Deals</p>
+          <p class="text-[13px] text-textSecondary">hosting.com</p>
+        </div>
+      </a>
+
+      <div class="border-t border-gray-300 mt-3 pt-3">
+        <div class="flex items-center justify-between px-2 mb-2">
+          <h3 class="text-textSecondary font-semibold text-[17px]">Contacts</h3>
+          <div class="flex gap-2">
+            <button class="w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center"><svg class="w-4 h-4 fill-current text-textSecondary" viewBox="0 0 20 20"><path d="M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM2 8a6 6 0 1 1 10.89 3.476l4.817 4.817a1 1 0 0 1-1.414 1.414l-4.816-4.816A6 6 0 0 1 2 8z"/></svg></button>
+            <button class="w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center"><svg class="w-4 h-4 fill-current text-textSecondary" viewBox="0 0 20 20"><path d="M6 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg></button>
+          </div>
+        </div>
+        <div class="space-y-0.5">
+          <div class="contact-item flex items-center gap-3 p-2 rounded-lg cursor-pointer transition">
+            <div class="relative"><img src="https://i.pravatar.cc/32?img=1" class="w-9 h-9 rounded-full" alt="" /><span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span></div>
+            <span class="text-[15px]">Rahim Uddin</span>
+          </div>
+          <div class="contact-item flex items-center gap-3 p-2 rounded-lg cursor-pointer transition">
+            <div class="relative"><img src="https://i.pravatar.cc/32?img=5" class="w-9 h-9 rounded-full" alt="" /><span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span></div>
+            <span class="text-[15px]">Fatema Akter</span>
+          </div>
+          <div class="contact-item flex items-center gap-3 p-2 rounded-lg cursor-pointer transition">
+            <div class="relative"><img src="https://i.pravatar.cc/32?img=8" class="w-9 h-9 rounded-full" alt="" /><span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span></div>
+            <span class="text-[15px]">Karim Hossain</span>
+          </div>
+          <div class="contact-item flex items-center gap-3 p-2 rounded-lg cursor-pointer transition">
+            <div class="relative"><img src="https://i.pravatar.cc/32?img=9" class="w-9 h-9 rounded-full" alt="" /><span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span></div>
+            <span class="text-[15px]">Nusrat Jahan</span>
+          </div>
+          <div class="contact-item flex items-center gap-3 p-2 rounded-lg cursor-pointer transition">
+            <div class="relative"><img src="https://i.pravatar.cc/32?img=11" class="w-9 h-9 rounded-full" alt="" /><span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span></div>
+            <span class="text-[15px]">Sakib Al Hasan</span>
+          </div>
+          <div class="contact-item flex items-center gap-3 p-2 rounded-lg cursor-pointer transition">
+            <div class="relative"><img src="https://i.pravatar.cc/32?img=15" class="w-9 h-9 rounded-full" alt="" /></div>
+            <span class="text-[15px]">Tamim Iqbal</span>
+          </div>
+          <div class="contact-item flex items-center gap-3 p-2 rounded-lg cursor-pointer transition">
+            <div class="relative"><img src="https://i.pravatar.cc/32?img=20" class="w-9 h-9 rounded-full" alt="" /><span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span></div>
+            <span class="text-[15px]">Mushfiqur Rahim</span>
+          </div>
+          <div class="contact-item flex items-center gap-3 p-2 rounded-lg cursor-pointer transition">
+            <div class="relative"><img src="https://i.pravatar.cc/32?img=22" class="w-9 h-9 rounded-full" alt="" /></div>
+            <span class="text-[15px]">Liton Das</span>
+          </div>
+          <div class="contact-item flex items-center gap-3 p-2 rounded-lg cursor-pointer transition">
+            <div class="relative"><img src="https://i.pravatar.cc/32?img=25" class="w-9 h-9 rounded-full" alt="" /><span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span></div>
+            <span class="text-[15px]">Taskin Ahmed</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Post Modal -->
+  <div id="postModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg w-[500px] shadow-xl">
+      <div class="flex items-center justify-between p-4 border-b">
+        <div></div>
+        <h3 class="text-xl font-bold">Create post</h3>
+        <button id="closePostModal" class="w-9 h-9 bg-bgGray rounded-full flex items-center justify-center hover:bg-gray-200"><svg class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22z"/></svg></button>
+      </div>
+      <div class="p-4">
+        <div class="flex items-center gap-3 mb-4">
+          <img src="https://i.pravatar.cc/40?img=12" class="w-10 h-10 rounded-full" alt="" />
+          <span class="font-semibold">Md Saroar</span>
+        </div>
+        <textarea id="postText" class="w-full resize-none outline-none text-xl min-h-[120px] placeholder:text-textSecondary" placeholder="What's on your mind, Saroar?"></textarea>
+        <div class="flex items-center justify-between mt-4 p-3 border rounded-lg">
+          <span class="text-[15px] font-semibold">Add to your post</span>
+          <div class="flex gap-2">
+            <button class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center"><svg class="w-6 h-6 text-green-500 fill-current" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg></button>
+            <button class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center"><svg class="w-6 h-6 text-fb fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></button>
+            <button class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center"><svg class="w-6 h-6 text-yellow-500 fill-current" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg></button>
+          </div>
+        </div>
+        <button id="submitPost" class="w-full mt-4 py-2 bg-fb text-white font-semibold rounded-lg hover:bg-fbDark transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Post</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Like button toggle
+    document.querySelectorAll('.like-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const icon = this.querySelector('svg');
+        const text = this.querySelector('span');
+        const isLiked = this.classList.contains('liked');
+        if (isLiked) {
+          this.classList.remove('liked');
+          icon.classList.remove('text-fb');
+          icon.classList.add('text-textSecondary');
+          text.classList.remove('text-fb');
+          text.classList.add('text-textSecondary');
+          text.textContent = 'Like';
+        } else {
+          this.classList.add('liked');
+          icon.classList.remove('text-textSecondary');
+          icon.classList.add('text-fb');
+          text.classList.remove('text-textSecondary');
+          text.classList.add('text-fb');
+          text.textContent = 'Liked';
+          icon.classList.add('like-animation');
+          setTimeout(() => icon.classList.remove('like-animation'), 300);
+        }
+      });
+    });
+
+    // Post modal
+    const modal = document.getElementById('postModal');
+    const openBtn = document.getElementById('openPostModal');
+    const closeBtn = document.getElementById('closePostModal');
+    const postText = document.getElementById('postText');
+    const submitBtn = document.getElementById('submitPost');
+
+    openBtn.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      postText.focus();
+    });
+    closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+    postText.addEventListener('input', () => {
+      submitBtn.disabled = postText.value.trim() === '';
+    });
+
+    submitBtn.addEventListener('click', () => {
+      if (postText.value.trim()) {
+        modal.classList.add('hidden');
+        postText.value = '';
+        submitBtn.disabled = true;
+        alert('Post created! (demo)');
+      }
+    });
+
+    // Nav icon active state
+    document.querySelectorAll('.nav-icon').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.nav-icon').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

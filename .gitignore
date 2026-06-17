@@ -1,0 +1,9 @@
+node_modules/
+.env
+uploads/images/*
+!uploads/images/.gitkeep
+dist/
+.vercel/
+tmp/
+
+.vercel

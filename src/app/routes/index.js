@@ -1,0 +1,38 @@
+const express = require("express");
+const router = express.Router();
+
+const authRoutes = require("../modules/auth/auth.route");
+const userRoutes = require("../modules/user/user.route");
+const postRoutes = require("../modules/post/post.route");
+const storyRoutes = require("../modules/story/story.route");
+const messageRoutes = require("../modules/message/message.route");
+const notificationRoutes = require("../modules/notification/notification.route");
+const friendRoutes = require("../modules/friend/friend.route");
+const groupRoutes = require("../modules/group/group.route");
+const eventRoutes = require("../modules/event/event.route");
+const savedRoutes = require("../modules/saved/saved.route");
+const productRoutes = require("../modules/marketplace/product.route");
+const videoRoutes = require("../modules/video/video.route");
+const uploadRoutes = require("./upload.route");
+const cryptoRoutes = require("./crypto.route");
+const reportRoutes = require("../modules/report/report.route");
+const blockRoutes = require("../modules/block/block.route");
+
+router.use("/auth", authRoutes);
+router.use("/user", userRoutes);
+router.use("/post", postRoutes);
+router.use("/story", storyRoutes);
+router.use("/message", messageRoutes);
+router.use("/notification", notificationRoutes);
+router.use("/friend", friendRoutes);
+router.use("/group", groupRoutes);
+router.use("/event", eventRoutes);
+router.use("/saved", savedRoutes);
+router.use("/product", productRoutes);
+router.use("/video", videoRoutes);
+router.use("/upload", uploadRoutes);
+router.use("/crypto", cryptoRoutes);
+router.use("/report", reportRoutes);
+router.use("/block", blockRoutes);
+
+module.exports = router;
