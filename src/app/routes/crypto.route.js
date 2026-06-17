@@ -261,7 +261,7 @@ router.get(
       return res.status(200).json(httpResponse("success", coins, "Live"));
     } catch (err) {
       if (pricesCache.data) return res.status(200).json(httpResponse("success", pricesCache.data, "Stale"));
-      throw err;
+      return res.status(200).json(httpResponse("success", [], "Failed to load prices"));
     }
   })
 );
@@ -654,9 +654,9 @@ router.get(
         });
       trendingCache = { data: coins, timestamp: now };
       return res.status(200).json(httpResponse("success", coins, "Live"));
-    } catch {
+    } catch (err) {
       if (trendingCache.data) return res.status(200).json(httpResponse("success", trendingCache.data, "Stale"));
-      throw err;
+      return res.status(200).json(httpResponse("success", [], "Failed to load trending"));
     }
   })
 );
