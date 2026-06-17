@@ -413,40 +413,76 @@ router.get(
     }
 
     try {
-      const [tickerRes, capData, globalData] = await Promise.all([
-        axios.get(`${BINANCE}/ticker/24hr`, { timeout: 10000 }),
-        fetchCoinCap(),
-        fetchGlobalData(),
-      ]);
+      let topCoins = [];
+      let tickerFailed = false;
+      try {
+        const [tickerRes, capData] = await Promise.all([
+          axios.get(`${BINANCE}/ticker/24hr`, { timeout: 10000 }),
+          fetchCoinCap(),
+        ]);
+        const hasCapData = Object.keys(capData).length > 0;
+        const assets = hasCapData ? capData : await fetchCoinGeckoMarkets();
+        const capAvailable = Object.keys(assets).length > 0;
 
-      const hasCapData = Object.keys(capData).length > 0;
-      const assets = hasCapData ? capData : await fetchCoinGeckoMarkets();
-      const capAvailable = Object.keys(assets).length > 0;
+        topCoins = (tickerRes.data || [])
+          .filter(t => t.symbol.endsWith('USDT') && !t.symbol.includes('UP') && !t.symbol.includes('DOWN') && !t.symbol.includes('BULL') && !t.symbol.includes('BEAR'))
+          .map(t => {
+            const sym = t.symbol.replace('USDT', '');
+            const cap = assets[sym] || {};
+            return {
+              id: REVERSE_MAP[sym] || cap.cgId || t.symbol.toLowerCase(),
+              name: cap.name || sym,
+              symbol: sym,
+              image: `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${sym.toLowerCase()}.png`,
+              current_price: parseFloat(t.lastPrice),
+              price_change_percentage_24h: cap.changePercent24Hr || parseFloat(t.priceChangePercent),
+              market_cap: cap.marketCapUsd || 0,
+              total_volume: cap.volumeUsd24Hr || parseFloat(t.quoteVolume),
+              high_24h: parseFloat(t.highPrice),
+              low_24h: parseFloat(t.lowPrice),
+              market_cap_rank: cap.rank || 0,
+            };
+          })
+          .sort((a, b) => b.market_cap > 0 && a.market_cap > 0 ? b.market_cap - a.market_cap : parseFloat(b.total_volume) - parseFloat(a.total_volume))
+          .slice(0, 1000)
+          .map((c, i) => ({ ...c, market_cap_rank: c.market_cap > 0 ? c.market_cap_rank : i + 1 }));
+      } catch {
+        tickerFailed = true;
+      }
 
-      const topCoins = (tickerRes.data || [])
-        .filter(t => t.symbol.endsWith('USDT') && !t.symbol.includes('UP') && !t.symbol.includes('DOWN') && !t.symbol.includes('BULL') && !t.symbol.includes('BEAR'))
-        .map(t => {
-          const sym = t.symbol.replace('USDT', '');
-          const cap = assets[sym] || {};
-          return {
-            id: REVERSE_MAP[sym] || cap.cgId || t.symbol.toLowerCase(),
-            name: cap.name || sym,
-            symbol: sym,
-            image: `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${sym.toLowerCase()}.png`,
-            current_price: parseFloat(t.lastPrice),
-            price_change_percentage_24h: cap.changePercent24Hr || parseFloat(t.priceChangePercent),
-            market_cap: cap.marketCapUsd || 0,
-            total_volume: cap.volumeUsd24Hr || parseFloat(t.quoteVolume),
-            high_24h: parseFloat(t.highPrice),
-            low_24h: parseFloat(t.lowPrice),
-            market_cap_rank: cap.rank || 0,
-          };
-        })
-        .sort((a, b) => b.market_cap > 0 && a.market_cap > 0 ? b.market_cap - a.market_cap : parseFloat(b.total_volume) - parseFloat(a.total_volume))
-        .slice(0, 1000)
-        .map((c, i) => ({ ...c, market_cap_rank: c.market_cap > 0 ? c.market_cap_rank : i + 1 }));
+      if (tickerFailed || topCoins.length === 0) {
+        try {
+          const cgPages = await Promise.all([
+            axios.get(`${COINGECKO}/coins/markets`, { params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 1, sparkline: false, price_change_percentage: '24h' }, timeout: 10000 }),
+            axios.get(`${COINGECKO}/coins/markets`, { params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 2, sparkline: false, price_change_percentage: '24h' }, timeout: 10000 }),
+            axios.get(`${COINGECKO}/coins/markets`, { params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 3, sparkline: false, price_change_percentage: '24h' }, timeout: 10000 }),
+            axios.get(`${COINGECKO}/coins/markets`, { params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 4, sparkline: false, price_change_percentage: '24h' }, timeout: 10000 }),
+          ]);
+          const allCoins = cgPages.flatMap(p => p.data || []);
+          topCoins = allCoins.map((c, i) => ({
+            id: c.id,
+            name: c.name,
+            symbol: c.symbol.toUpperCase(),
+            image: c.image || `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${c.symbol.toLowerCase()}.png`,
+            current_price: c.current_price,
+            price_change_percentage_24h: c.price_change_percentage_24h || 0,
+            market_cap: c.market_cap || 0,
+            total_volume: c.total_volume || 0,
+            high_24h: c.high_24h || c.current_price,
+            low_24h: c.low_24h || c.current_price,
+            market_cap_rank: c.market_cap_rank || i + 1,
+          }));
+        } catch {}
+      }
 
       if (topCoins.length === 0) throw new Error("No coins available for analysis");
+
+      let globalData;
+      try {
+        globalData = await fetchGlobalData();
+      } catch {
+        globalData = { totalMarketCap: 0, totalVolume: 0, btcDominance: 0, activeCurrencies: 0 };
+      }
 
       const btc = topCoins.find(c => c.id === 'bitcoin');
       const eth = topCoins.find(c => c.id === 'ethereum');
