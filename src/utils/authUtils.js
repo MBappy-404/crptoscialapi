@@ -9,23 +9,23 @@ const addCookies = (res, userData) => {
 
   res.cookie("token", accessToken, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+    secure: true,
     path: "/",
     expires: new Date(Date.now() + 12 * 60 * 60 * 1000),
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+    secure: true,
     path: "/",
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
   res.cookie("tokenExp", "1", {
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+    secure: true,
     path: "/",
     expires: new Date(Date.now() + 12 * 60 * 60 * 1000),
   });
