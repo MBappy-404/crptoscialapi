@@ -21,7 +21,7 @@ app.use(mongoSanitize());
 
 // CORS
 const allowedOrigins = process.env.NODE_ENV === "production"
-  ? [process.env.PROD_CLIENT_URL, "https://cryptocial.vercel.app"]
+  ? [process.env.PROD_CLIENT_URL, "https://cryptocial.vercel.app", "https://crptoscial.vercel.app", "http://localhost:5173", "http://localhost:5174"]
   : [process.env.STAGE_CLIENT_URL, "http://localhost:5173", "http://localhost:5174"];
 
 app.use(
