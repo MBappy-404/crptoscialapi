@@ -2,6 +2,7 @@ const { calculateSignal } = require('../utils/technicalAnalysis');
 const { addSuggestion, checkHits, getPerformance, getRecentSuggestions, getTopHits } = require('../utils/suggestionTracker');
 const klineEngine = require('./klineEngine');
 const priceEngine = require('./priceEngine');
+const signalStore = require('./signalStore');
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -124,7 +125,50 @@ async function generateFullAnalysis(timeframe) {
 
   for (const c of withSignals) {
     try { await addSuggestion(c); } catch {}
+
+    try {
+      const direction = c.signal.includes('BUY') ? 'BUY' : 'SELL';
+      const isBuy = direction === 'BUY';
+      const tp1 = isBuy
+        ? c.trading.entryPrice + (c.trading.entryPrice - c.trading.stopLoss) * 1.5
+        : c.trading.entryPrice - (c.trading.stopLoss - c.trading.entryPrice) * 1.5;
+      const tp2 = isBuy
+        ? c.trading.entryPrice + (c.trading.entryPrice - c.trading.stopLoss) * 2.5
+        : c.trading.entryPrice - (c.trading.stopLoss - c.trading.entryPrice) * 2.5;
+
+      await signalStore.createSignal({
+        symbol: c.symbol + 'USDT',
+        timeframe,
+        direction,
+        signalType: c.signal,
+        entryPrice: c.trading.entryPrice,
+        stopLoss: c.trading.stopLoss,
+        tp1,
+        tp2,
+        tp3: c.trading.takeProfit,
+        takeProfit: c.trading.takeProfit,
+        confidence: c.confidence,
+        signalScore: direction === 'BUY' ? c.scores.buy : c.scores.sell,
+        riskReward: c.trading.riskReward,
+      });
+    } catch {}
+
+    try {
+      await signalStore.checkInvalidation(c);
+    } catch {}
   }
+
+  try {
+    await signalStore.checkExpiration();
+  } catch {}
+
+  try {
+    const currentPrices = {};
+    for (const coin of topCoins) {
+      currentPrices[coin.symbol + 'USDT'] = coin.current_price;
+    }
+    await signalStore.checkPriceUpdates(currentPrices);
+  } catch {}
 
   const sorted = [...withSignals].sort((a, b) => {
     if (b.confidence !== a.confidence) return b.confidence - a.confidence;
@@ -142,9 +186,13 @@ async function generateFullAnalysis(timeframe) {
   let perf = { hits: 0, missed: 0, active: 0, hitRate: 0 };
   let recentSugs = [];
   let topHitsData = [];
+  let activeSignals = [];
+  let signalStats = { wins: 0, losses: 0, invalidated: 0, expired: 0, tp1Hits: 0, tp2Hits: 0, tp3Hits: 0, total: 0, winRate: 0, avgRR: 0, bestCoin: null, bestTimeframe: null };
   try { perf = await getPerformance(); } catch {}
   try { recentSugs = await getRecentSuggestions(20); } catch {}
   try { topHitsData = await getTopHits(); } catch {}
+  try { activeSignals = await signalStore.getActiveSignals(); } catch {}
+  try { signalStats = await signalStore.getSignalStats(); } catch {}
 
   const analysis = {
     timeframe: config.label || timeframe,
@@ -180,6 +228,8 @@ async function generateFullAnalysis(timeframe) {
     },
     allSignals: sorted,
     performance: perf,
+    activeSignals,
+    signalStats,
     recentSuggestions: recentSugs,
     topHits: topHitsData,
     timestamps: new Date().toISOString(),

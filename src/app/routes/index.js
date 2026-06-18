@@ -15,6 +15,7 @@ const productRoutes = require("../modules/marketplace/product.route");
 const videoRoutes = require("../modules/video/video.route");
 const uploadRoutes = require("./upload.route");
 const cryptoRoutes = require("./crypto.route");
+const signalRoutes = require("./signal.route");
 const reportRoutes = require("../modules/report/report.route");
 const blockRoutes = require("../modules/block/block.route");
 
@@ -32,6 +33,7 @@ router.use("/product", productRoutes);
 router.use("/video", videoRoutes);
 router.use("/upload", uploadRoutes);
 router.use("/crypto", cryptoRoutes);
+router.use("/signal", signalRoutes);
 router.use("/report", reportRoutes);
 router.use("/block", blockRoutes);
 

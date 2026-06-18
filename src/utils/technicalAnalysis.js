@@ -101,18 +101,26 @@ function calculateSignal(closes, volumes, highs, lows, timeframe) {
   const rsiValues = rsi(closes, 14);
   const rsiNow = rsiValues[rsiValues.length - 1];
 
+  const ma20 = sma(closes, 20);
   const ma45 = sma(closes, 45);
   const ma50 = sma(closes, 50);
   const ma100 = sma(closes, 100);
   const ma200 = sma(closes, 200);
+  const ema20 = ema(closes, 20);
+  const ema50 = ema(closes, 50);
 
+  const ma20Now = ma20[ma20.length - 1];
   const ma45Now = ma45[ma45.length - 1];
   const ma50Now = ma50[ma50.length - 1];
   const ma100Now = ma100[ma100.length - 1];
   const ma200Now = ma200[ma200.length - 1];
+  const ema20Now = ema20[ema20.length - 1];
+  const ema50Now = ema50[ema50.length - 1];
 
   const goldenCross = detectGoldenCross(ma45, ma50);
   const deathCross = detectDeathCross(ma45, ma50);
+  const ema20CrossAbove50 = ema20.length >= 2 && ema50.length >= 2 && ema20[ema20.length - 2] <= ema50[ema50.length - 2] && ema20Now > ema50Now;
+  const ema20CrossBelow50 = ema20.length >= 2 && ema50.length >= 2 && ema20[ema20.length - 2] >= ema50[ema50.length - 2] && ema20Now < ema50Now;
   const volConfirmed = volumeConfirmation(volumes, 20);
   const volStr = volumeStrength(volumes, 20);
   const structure = marketStructure(price, ma45Now, ma50Now);
@@ -229,10 +237,14 @@ function calculateSignal(closes, volumes, highs, lows, timeframe) {
     symbol: null, timeframe, signal, confidence,
     currentPrice: Math.round(price * 100) / 100,
     rsi: Math.round(rsiNow * 10) / 10,
+    ma20: ma20Now ? Math.round(ma20Now * 100) / 100 : null,
     ma45: ma45Now ? Math.round(ma45Now * 100) / 100 : null,
     ma50: ma50Now ? Math.round(ma50Now * 100) / 100 : null,
     ma100: ma100Now ? Math.round(ma100Now * 100) / 100 : null,
     ma200: ma200Now ? Math.round(ma200Now * 100) / 100 : null,
+    ema20: ema20Now ? Math.round(ema20Now * 100) / 100 : null,
+    ema50: ema50Now ? Math.round(ema50Now * 100) / 100 : null,
+    ema20CrossAbove50, ema20CrossBelow50,
     goldenCross, deathCross, volumeConfirmed: volConfirmed,
     volumeStrength: Math.round(volStr * 100) / 100,
     marketStructure: structure, maRejection, entryDistance,
