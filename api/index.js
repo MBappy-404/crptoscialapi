@@ -1,13 +1,12 @@
 const serverless = require("serverless-http");
 const app = require("../src/app");
 const { connectDB } = require("./db");
-const priceEngine = require("../src/engine/priceEngine");
-const klineEngine = require("../src/engine/klineEngine");
-const analysisEngine = require("../src/engine/analysisEngine");
 
 let isConnected = false;
 let enginesStarted = false;
+let enginesReady = false;
 let serverlessHandler = null;
+let enginesPromise = null;
 
 const SYMBOL_MAP = {
   bitcoin: 'BTCUSDT', ethereum: 'ETHUSDT', tether: 'USDTUSDT', binancecoin: 'BNBUSDT',
@@ -35,33 +34,39 @@ async function ensureDB() {
   }
 }
 
-async function ensureEngines() {
+function ensureEngines() {
   if (enginesStarted) return;
   enginesStarted = true;
 
-  try {
-    console.log('[Vercel] Starting crypto engines...');
-    priceEngine.initReverseMap(REVERSE_MAP);
+  enginesPromise = (async () => {
+    try {
+      const priceEngine = require("../src/engine/priceEngine");
+      priceEngine.initReverseMap(REVERSE_MAP);
+      await priceEngine.start();
 
-    await priceEngine.start();
+      const coinList = priceEngine.getCoinList();
+      const symbols = coinList.map(c => c.symbol + 'USDT');
 
-    const coinList = priceEngine.getCoinList();
-    const symbols = coinList.map(c => c.symbol + 'USDT');
+      const klineEngine = require("../src/engine/klineEngine");
+      await klineEngine.start(symbols);
 
-    await klineEngine.start(symbols);
+      const analysisEngine = require("../src/engine/analysisEngine");
+      await analysisEngine.start();
 
-    await analysisEngine.start();
+      enginesReady = true;
+      console.log('[Vercel] Engines ready');
+    } catch (err) {
+      console.error('[Vercel] Engine error:', err.message);
+    }
+  })();
 
-    console.log('[Vercel] All engines started');
-  } catch (err) {
-    console.error('[Vercel] Engine startup error:', err.message);
-  }
+  enginesPromise.catch(() => {});
 }
 
 module.exports = async function handler(req, res) {
   try {
     await ensureDB();
-    await ensureEngines();
+    ensureEngines();
 
     if (!serverlessHandler) {
       serverlessHandler = serverless(app);

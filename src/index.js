@@ -4,9 +4,6 @@ const http = require("http");
 const db = require("./config/db_conn");
 const logger = require("./config/logger");
 const socketConfig = require("./config/socket_io");
-const priceEngine = require("./engine/priceEngine");
-const klineEngine = require("./engine/klineEngine");
-const analysisEngine = require("./engine/analysisEngine");
 
 const port = normalizePort(process.env.PORT || "4000");
 let server;
@@ -28,30 +25,36 @@ db.connectToServer(function (err) {
 });
 
 function startEnginesInBackground() {
-  (async () => {
-    try {
-      console.log('[Boot] Starting crypto engines...');
+  setTimeout(() => {
+    (async () => {
+      try {
+        const priceEngine = require("./engine/priceEngine");
+        console.log('[Boot] Starting price engine...');
+        await priceEngine.start();
+        console.log('[Boot] Price engine ready');
 
-      await priceEngine.start();
-      console.log('[Boot] Price engine ready');
+        const coinList = priceEngine.getCoinList();
+        const symbols = coinList.map(c => c.symbol + 'USDT');
+        console.log(`[Boot] ${symbols.length} symbols`);
 
-      const coinList = priceEngine.getCoinList();
-      const symbols = coinList.map(c => c.symbol + 'USDT');
-      console.log(`[Boot] ${symbols.length} symbols for kline loading`);
+        const klineEngine = require("./engine/klineEngine");
+        console.log('[Boot] Starting kline engine...');
+        await klineEngine.start(symbols);
+        console.log('[Boot] Kline engine ready');
 
-      await klineEngine.start(symbols);
-      console.log('[Boot] Kline engine ready');
+        const analysisEngine = require("./engine/analysisEngine");
+        console.log('[Boot] Starting analysis engine...');
+        await analysisEngine.start();
+        console.log('[Boot] Analysis engine ready');
 
-      await analysisEngine.start();
-      console.log('[Boot] Analysis engine ready');
-
-      console.log('[Boot] All engines started successfully');
-    } catch (err) {
-      console.error('[Boot] Engine startup error:', err.message);
-    }
-  })().catch(err => {
-    console.error('[Boot] Critical engine error:', err.message);
-  });
+        console.log('[Boot] All engines started');
+      } catch (err) {
+        console.error('[Boot] Engine error:', err.message);
+      }
+    })().catch(err => {
+      console.error('[Boot] Critical:', err.message);
+    });
+  }, 3000);
 }
 
 function normalizePort(val) {
@@ -61,27 +64,11 @@ function normalizePort(val) {
   return false;
 }
 
-const exitHandler = () => {
-  if (server) {
-    server.close(() => {
-      logger.info("Server closed");
-      process.exit(1);
-    });
-  } else {
-    process.exit(1);
-  }
-};
-
-const unexpectedErrorHandler = (error) => {
-  logger.error(error);
-  exitHandler();
-};
-
 process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception:", err);
+  console.error("Uncaught Exception:", err.message);
 });
 process.on("unhandledRejection", (err) => {
-  console.error("Unhandled Rejection:", err);
+  console.error("Unhandled Rejection:", err.message || err);
 });
 process.on("SIGTERM", () => {
   logger.info("SIGTERM received");

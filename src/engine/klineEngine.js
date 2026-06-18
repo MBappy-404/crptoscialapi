@@ -15,10 +15,10 @@ const TIMEFRAME_CONFIG = {
 
 let klineCache = new Map();
 let isInitialized = false;
-let coinSymbols = [];
 
-const BATCH_SIZE = 25;
-const BATCH_DELAY = 500;
+const BATCH_SIZE = 10;
+const BATCH_DELAY = 1000;
+const INITIAL_COIN_LIMIT = 50;
 
 async function fetchKlines(symbol, interval, limit) {
   try {
@@ -59,12 +59,13 @@ async function loadInitialKlines(symbols, timeframe) {
   const config = TIMEFRAME_CONFIG[timeframe];
   if (!config) return;
 
-  console.log(`[KlineEngine] Loading ${symbols.length} coins for ${timeframe}...`);
-  console.time(`[KlineEngine] Initial load ${timeframe}`);
+  const loadSymbols = symbols.slice(0, INITIAL_COIN_LIMIT);
+  console.log(`[KlineEngine] Loading ${loadSymbols.length} coins for ${timeframe}...`);
+  console.time(`[KlineEngine] Load ${timeframe}`);
 
   let loaded = 0;
-  for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
-    const batch = symbols.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < loadSymbols.length; i += BATCH_SIZE) {
+    const batch = loadSymbols.slice(i, i + BATCH_SIZE);
     await Promise.allSettled(
       batch.map(async (symbol) => {
         const klines = await fetchKlines(symbol, config.interval, config.initialLimit);
@@ -74,22 +75,23 @@ async function loadInitialKlines(symbols, timeframe) {
         }
       })
     );
-    if (i + BATCH_SIZE < symbols.length) await sleep(BATCH_DELAY);
+    if (i + BATCH_SIZE < loadSymbols.length) await sleep(BATCH_DELAY);
   }
 
-  console.log(`[KlineEngine] Loaded ${loaded}/${symbols.length} coins for ${timeframe}`);
-  console.timeEnd(`[KlineEngine] Initial load ${timeframe}`);
+  console.log(`[KlineEngine] Loaded ${loaded}/${loadSymbols.length} for ${timeframe}`);
+  console.timeEnd(`[KlineEngine] Load ${timeframe}`);
 }
 
 async function refreshKlinesForTimeframe(symbols, timeframe) {
   const config = TIMEFRAME_CONFIG[timeframe];
   if (!config) return;
 
+  const refreshSymbols = symbols.slice(0, INITIAL_COIN_LIMIT);
   console.time(`[KlineEngine] Refresh ${timeframe}`);
 
   let refreshed = 0;
-  for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
-    const batch = symbols.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < refreshSymbols.length; i += BATCH_SIZE) {
+    const batch = refreshSymbols.slice(i, i + BATCH_SIZE);
     await Promise.allSettled(
       batch.map(async (symbol) => {
         const key = cacheKey(symbol, timeframe);
@@ -149,7 +151,7 @@ async function refreshKlinesForTimeframe(symbols, timeframe) {
         }
       })
     );
-    if (i + BATCH_SIZE < symbols.length) await sleep(BATCH_DELAY);
+    if (i + BATCH_SIZE < refreshSymbols.length) await sleep(BATCH_DELAY);
   }
 
   console.timeEnd(`[KlineEngine] Refresh ${timeframe}`);
@@ -157,13 +159,17 @@ async function refreshKlinesForTimeframe(symbols, timeframe) {
 
 async function startRefreshLoop(symbols) {
   while (true) {
-    for (const [timeframe, config] of Object.entries(TIMEFRAME_CONFIG)) {
+    for (const [timeframe] of Object.entries(TIMEFRAME_CONFIG)) {
       const loaded = getLoadedCount(timeframe);
-      if (loaded < 10) {
-        console.log(`[KlineEngine] Skipping refresh ${timeframe}: only ${loaded} coins loaded`);
+      if (loaded < 5) {
+        await sleep(30000);
         continue;
       }
-      await refreshKlinesForTimeframe(symbols, timeframe);
+      try {
+        await refreshKlinesForTimeframe(symbols, timeframe);
+      } catch (err) {
+        console.error(`[KlineEngine] Refresh ${timeframe} error:`, err.message);
+      }
       await sleep(5000);
     }
   }
@@ -172,14 +178,17 @@ async function startRefreshLoop(symbols) {
 async function start(symbols) {
   if (isInitialized) return;
   isInitialized = true;
-  coinSymbols = symbols;
-  console.log(`[KlineEngine] Starting for ${symbols.length} coins...`);
+  console.log(`[KlineEngine] Starting for ${Math.min(symbols.length, INITIAL_COIN_LIMIT)} coins...`);
 
   for (const timeframe of Object.keys(TIMEFRAME_CONFIG)) {
-    await loadInitialKlines(symbols, timeframe);
+    try {
+      await loadInitialKlines(symbols, timeframe);
+    } catch (err) {
+      console.error(`[KlineEngine] Initial load ${timeframe} error:`, err.message);
+    }
   }
 
-  console.log('[KlineEngine] Initial load complete, starting refresh loops...');
+  console.log('[KlineEngine] Initial load complete');
   startRefreshLoop(symbols).catch(() => {});
 }
 
