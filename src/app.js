@@ -14,22 +14,37 @@ const { errorConverter, errorHandler } = require("./app/middleware/error");
 
 const app = express();
 
+// CORS must be before helmet
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    const allowedOrigins = [
+      "https://cryptocial.vercel.app",
+      "https://crptoscial.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      process.env.PROD_CLIENT_URL,
+      process.env.STAGE_CLIENT_URL,
+    ].filter(Boolean);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+}));
+
 // Security
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,
+}));
 app.use(compression());
 app.use(mongoSanitize());
-
-// CORS
-const allowedOrigins = process.env.NODE_ENV === "production"
-  ? [process.env.PROD_CLIENT_URL, "https://cryptocial.vercel.app", "https://crptoscial.vercel.app", "http://localhost:5173", "http://localhost:5174"]
-  : [process.env.STAGE_CLIENT_URL, "http://localhost:5173", "http://localhost:5174"];
-
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  })
-);
 
 // Body parsing
 app.use(logger("dev"));
