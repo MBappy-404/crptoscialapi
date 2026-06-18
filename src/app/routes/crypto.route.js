@@ -71,27 +71,21 @@ async function fetchCoinCap() {
 
 async function fetchCoinGeckoMarkets() {
   try {
-    const pages = await Promise.all([
-      axios.get(`${COINGECKO}/coins/markets`, {
-        params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 1, sparkline: false },
-        timeout: 10000,
-      }),
-      axios.get(`${COINGECKO}/coins/markets`, {
-        params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 2, sparkline: false },
-        timeout: 10000,
-      }),
-      axios.get(`${COINGECKO}/coins/markets`, {
-        params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 3, sparkline: false },
-        timeout: 10000,
-      }),
-      axios.get(`${COINGECKO}/coins/markets`, {
-        params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 4, sparkline: false },
-        timeout: 10000,
-      }),
-    ]);
-    const all = pages.flatMap(p => p.data || []);
+    const results = [];
+    for (let page = 1; page <= 4; page++) {
+      try {
+        const { data } = await axios.get(`${COINGECKO}/coins/markets`, {
+          params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page, sparkline: false },
+          timeout: 15000,
+        });
+        results.push(...(data || []));
+        if (page < 4) await sleep(1500);
+      } catch {
+        break;
+      }
+    }
     const map = {};
-    for (const c of all) {
+    for (const c of results) {
       map[c.symbol.toUpperCase()] = {
         marketCapUsd: c.market_cap || 0,
         volumeUsd24Hr: c.total_volume || 0,
@@ -239,7 +233,7 @@ async function fetchPricesFromBinance() {
     })
     .filter(c => capDataAvailable ? c.market_cap > 0 : true)
     .sort((a, b) => capDataAvailable ? b.market_cap - a.market_cap : parseFloat(b.total_volume) - parseFloat(a.total_volume))
-    .slice(0, 1000)
+    .slice(0, 200)
     .map((c, i) => ({ ...c, market_cap_rank: c.market_cap > 0 ? c.market_cap_rank : i + 1 }));
 
   const topSymbols = rawCoins.filter(c => REVERSE_MAP[c.symbol]).map(c => SYMBOL_MAP[REVERSE_MAP[c.symbol]]);
@@ -252,25 +246,19 @@ async function fetchPricesFromBinance() {
 }
 
 async function fetchPricesFromCoinGecko() {
-  const pages = await Promise.all([
-    axios.get(`${COINGECKO}/coins/markets`, {
-      params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 1, sparkline: false, price_change_percentage: '1h,24h,7d' },
-      timeout: 10000,
-    }),
-    axios.get(`${COINGECKO}/coins/markets`, {
-      params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 2, sparkline: false, price_change_percentage: '1h,24h,7d' },
-      timeout: 10000,
-    }),
-    axios.get(`${COINGECKO}/coins/markets`, {
-      params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 3, sparkline: false, price_change_percentage: '1h,24h,7d' },
-      timeout: 10000,
-    }),
-    axios.get(`${COINGECKO}/coins/markets`, {
-      params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 4, sparkline: false, price_change_percentage: '1h,24h,7d' },
-      timeout: 10000,
-    }),
-  ]);
-  const all = pages.flatMap(p => p.data || []);
+  const all = [];
+  for (let page = 1; page <= 4; page++) {
+    try {
+      const { data } = await axios.get(`${COINGECKO}/coins/markets`, {
+        params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page, sparkline: false, price_change_percentage: '1h,24h,7d' },
+        timeout: 15000,
+      });
+      all.push(...(data || []));
+      if (page < 4) await sleep(1500);
+    } catch {
+      break;
+    }
+  }
   return all.map((c, i) => ({
     id: c.id,
     name: c.name,
@@ -444,7 +432,7 @@ router.get(
             };
           })
           .sort((a, b) => b.market_cap > 0 && a.market_cap > 0 ? b.market_cap - a.market_cap : parseFloat(b.total_volume) - parseFloat(a.total_volume))
-          .slice(0, 1000)
+          .slice(0, 100)
           .map((c, i) => ({ ...c, market_cap_rank: c.market_cap > 0 ? c.market_cap_rank : i + 1 }));
       } catch {
         tickerFailed = true;
@@ -452,14 +440,18 @@ router.get(
 
       if (tickerFailed || topCoins.length === 0) {
         try {
-          const cgPages = await Promise.all([
-            axios.get(`${COINGECKO}/coins/markets`, { params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 1, sparkline: false, price_change_percentage: '24h' }, timeout: 10000 }),
-            axios.get(`${COINGECKO}/coins/markets`, { params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 2, sparkline: false, price_change_percentage: '24h' }, timeout: 10000 }),
-            axios.get(`${COINGECKO}/coins/markets`, { params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 3, sparkline: false, price_change_percentage: '24h' }, timeout: 10000 }),
-            axios.get(`${COINGECKO}/coins/markets`, { params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: 4, sparkline: false, price_change_percentage: '24h' }, timeout: 10000 }),
-          ]);
-          const allCoins = cgPages.flatMap(p => p.data || []);
-          topCoins = allCoins.map((c, i) => ({
+          const cgAll = [];
+          for (let cgPage = 1; cgPage <= 4; cgPage++) {
+            try {
+              const { data } = await axios.get(`${COINGECKO}/coins/markets`, {
+                params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 250, page: cgPage, sparkline: false, price_change_percentage: '24h' },
+                timeout: 10000,
+              });
+              cgAll.push(...(data || []));
+              if (cgPage < 4) await sleep(1500);
+            } catch { break; }
+          }
+          topCoins = cgAll.slice(0, 100).map((c, i) => ({
             id: c.id,
             name: c.name,
             symbol: c.symbol.toUpperCase(),
