@@ -13,14 +13,6 @@ const sendMessage = catchAsync(async (req, res) => {
     io.to(`user:${receiverId}`).emit("receive-message", message);
   }
 
-  const notificationService = require("../notification/notification.service");
-  await notificationService.createNotification({
-    user: req.params.receiverId,
-    from: req.user.id,
-    type: "message",
-    message: req.body.text?.substring(0, 50) || "sent you a message",
-  });
-
   res.status(httpStatus.CREATED).json(httpResponse("success", message, "Message sent."));
 });
 
