@@ -21,30 +21,37 @@ db.connectToServer(function (err) {
 
   server = app.listen(port, () => {
     logger.info(`Server running on port ${port}`);
-    startEngines();
+    startEnginesInBackground();
   });
 
   socketConfig.connect(server);
 });
 
-async function startEngines() {
-  try {
-    console.log('[Boot] Starting crypto engines...');
+function startEnginesInBackground() {
+  (async () => {
+    try {
+      console.log('[Boot] Starting crypto engines...');
 
-    await priceEngine.start();
+      await priceEngine.start();
+      console.log('[Boot] Price engine ready');
 
-    const coinList = priceEngine.getCoinList();
-    const symbols = coinList.map(c => c.symbol + 'USDT');
-    console.log(`[Boot] ${symbols.length} symbols for kline loading`);
+      const coinList = priceEngine.getCoinList();
+      const symbols = coinList.map(c => c.symbol + 'USDT');
+      console.log(`[Boot] ${symbols.length} symbols for kline loading`);
 
-    await klineEngine.start(symbols);
+      await klineEngine.start(symbols);
+      console.log('[Boot] Kline engine ready');
 
-    await analysisEngine.start();
+      await analysisEngine.start();
+      console.log('[Boot] Analysis engine ready');
 
-    console.log('[Boot] All engines started successfully');
-  } catch (err) {
-    console.error('[Boot] Engine startup error:', err.message);
-  }
+      console.log('[Boot] All engines started successfully');
+    } catch (err) {
+      console.error('[Boot] Engine startup error:', err.message);
+    }
+  })().catch(err => {
+    console.error('[Boot] Critical engine error:', err.message);
+  });
 }
 
 function normalizePort(val) {
@@ -70,8 +77,12 @@ const unexpectedErrorHandler = (error) => {
   exitHandler();
 };
 
-process.on("uncaughtException", unexpectedErrorHandler);
-process.on("unhandledRejection", unexpectedErrorHandler);
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err);
+});
 process.on("SIGTERM", () => {
   logger.info("SIGTERM received");
   if (server) server.close();
