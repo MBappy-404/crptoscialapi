@@ -18,7 +18,7 @@ let isInitialized = false;
 
 const BATCH_SIZE = 10;
 const BATCH_DELAY = 1000;
-const INITIAL_COIN_LIMIT = 50;
+const INITIAL_COIN_LIMIT = 1000;
 
 async function fetchKlines(symbol, interval, limit) {
   try {

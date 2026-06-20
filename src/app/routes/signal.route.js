@@ -16,7 +16,7 @@ router.get(
 router.get(
   "/all",
   catchAsync(async (req, res) => {
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = parseInt(req.query.limit) || 5000;
     const signals = await signalStore.getAllSignals(limit);
     return res.status(200).json(httpResponse("success", signals, "All signals"));
   })
@@ -61,6 +61,17 @@ router.delete(
   catchAsync(async (req, res) => {
     await signalStore.clearAll();
     return res.status(200).json(httpResponse("success", null, "All signals cleared"));
+  })
+);
+
+router.delete(
+  "/:id",
+  catchAsync(async (req, res) => {
+    const deleted = await signalStore.deleteSignal(req.params.id);
+    if (!deleted) {
+      return res.status(404).json(httpResponse("error", null, "Signal not found"));
+    }
+    return res.status(200).json(httpResponse("success", null, "Signal deleted"));
   })
 );
 

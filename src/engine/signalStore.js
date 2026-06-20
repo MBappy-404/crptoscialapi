@@ -164,11 +164,11 @@ async function checkPriceUpdates(currentPrices) {
       updated = true;
     }
 
-    if (!sig.tp1Hit && isBuy && price <= sig.stopLoss) {
+    if (isBuy && price <= sig.stopLoss) {
       sig.status = 'LOSS';
       sig.exitPrice = price;
       updated = true;
-    } else if (!sig.tp1Hit && !isBuy && price >= sig.stopLoss) {
+    } else if (!isBuy && price >= sig.stopLoss) {
       sig.status = 'LOSS';
       sig.exitPrice = price;
       updated = true;
@@ -187,7 +187,7 @@ async function getActiveSignals() {
   return await Signal.find({ status: { $in: ['ACTIVE', 'TP1_HIT', 'TP2_HIT'] } }).sort({ createdAt: -1 }).lean();
 }
 
-async function getAllSignals(limit = 100) {
+async function getAllSignals(limit = 5000) {
   return await Signal.find().sort({ createdAt: -1 }).limit(limit).lean();
 }
 
@@ -249,6 +249,10 @@ async function getSignalStats() {
   };
 }
 
+async function deleteSignal(signalId) {
+  return await Signal.findByIdAndDelete(signalId);
+}
+
 async function archiveCompleted() {
   const completed = await Signal.find({ status: { $in: ['WIN', 'LOSS', 'INVALIDATED', 'EXPIRED'] } }).lean();
   return completed;
@@ -269,4 +273,5 @@ module.exports = {
   getSignalStats,
   archiveCompleted,
   clearAll,
+  deleteSignal,
 };
