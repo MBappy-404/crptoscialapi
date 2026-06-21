@@ -25,6 +25,7 @@ const signalSchema = new Schema(
     exitPrice: Number,
     riskReward: Number,
     expiredAt: Date,
+    isSelected: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

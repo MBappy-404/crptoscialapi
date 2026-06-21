@@ -122,6 +122,13 @@ async function refreshPricesLoop() {
   while (true) {
     await sleep(30000);
     try {
+      if (coinListCache.length === 0) {
+        console.log('[PriceEngine] coinListCache is empty, retrying initial load...');
+        await loadInitialPrices();
+        if (coinListCache.length === 0) {
+          continue;
+        }
+      }
       const tickerRes = await axios.get(`${BINANCE_API}/ticker/24hr`, { timeout: 10000 });
       for (const t of (tickerRes.data || [])) {
         if (t.symbol.endsWith('USDT') && !t.symbol.includes('UP') && !t.symbol.includes('DOWN')) {

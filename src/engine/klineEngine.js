@@ -1,4 +1,5 @@
 const axios = require('axios');
+const priceEngine = require('./priceEngine');
 
 const BINANCE_API = 'https://api.binance.com/api/v3';
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -157,14 +158,15 @@ async function refreshKlinesForTimeframe(symbols, timeframe) {
   console.timeEnd(`[KlineEngine] Refresh ${timeframe}`);
 }
 
-async function startRefreshLoop(symbols) {
+async function startRefreshLoop() {
   while (true) {
+    const coinList = priceEngine.getCoinList();
+    const symbols = coinList.map(c => c.symbol + 'USDT');
+    if (symbols.length === 0) {
+      await sleep(10000);
+      continue;
+    }
     for (const [timeframe] of Object.entries(TIMEFRAME_CONFIG)) {
-      const loaded = getLoadedCount(timeframe);
-      if (loaded < 5) {
-        await sleep(30000);
-        continue;
-      }
       try {
         await refreshKlinesForTimeframe(symbols, timeframe);
       } catch (err) {
@@ -178,18 +180,27 @@ async function startRefreshLoop(symbols) {
 async function start(symbols) {
   if (isInitialized) return;
   isInitialized = true;
-  console.log(`[KlineEngine] Starting for ${Math.min(symbols.length, INITIAL_COIN_LIMIT)} coins...`);
+
+  let activeSymbols = symbols;
+  if (!activeSymbols || !activeSymbols.length) {
+    const coinList = priceEngine.getCoinList();
+    activeSymbols = coinList.map(c => c.symbol + 'USDT');
+  }
+
+  console.log(`[KlineEngine] Starting for ${Math.min(activeSymbols.length, INITIAL_COIN_LIMIT)} coins...`);
 
   for (const timeframe of Object.keys(TIMEFRAME_CONFIG)) {
     try {
-      await loadInitialKlines(symbols, timeframe);
+      if (activeSymbols.length > 0) {
+        await loadInitialKlines(activeSymbols, timeframe);
+      }
     } catch (err) {
       console.error(`[KlineEngine] Initial load ${timeframe} error:`, err.message);
     }
   }
 
   console.log('[KlineEngine] Initial load complete');
-  startRefreshLoop(symbols).catch(() => {});
+  startRefreshLoop().catch(() => {});
 }
 
 function getKlines(symbol, timeframe) {

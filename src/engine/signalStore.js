@@ -11,14 +11,25 @@ const VALID_TRANSITIONS = {
 async function createSignal(signalData) {
   const existing = await Signal.findOne({
     symbol: signalData.symbol,
-    timeframe: signalData.timeframe,
-    direction: signalData.direction,
     status: { $in: ['ACTIVE', 'TP1_HIT', 'TP2_HIT'] },
   });
 
   if (existing) {
+    existing.timeframe = signalData.timeframe;
+    existing.direction = signalData.direction;
+    existing.signalType = signalData.signalType;
+    existing.entryPrice = signalData.entryPrice;
+    existing.stopLoss = signalData.stopLoss;
+    existing.tp1 = signalData.tp1;
+    existing.tp2 = signalData.tp2;
+    existing.tp3 = signalData.tp3;
+    existing.takeProfit = signalData.takeProfit || signalData.tp3;
     existing.confidence = Math.max(existing.confidence, signalData.confidence || 0);
     existing.signalScore = Math.max(existing.signalScore || 0, signalData.signalScore || 0);
+    existing.riskReward = signalData.riskReward || existing.riskReward;
+    if (signalData.isSelected) {
+      existing.isSelected = true;
+    }
     await existing.save();
     return existing;
   }
@@ -84,13 +95,13 @@ async function checkInvalidation(analysisResult) {
     const isBuy = sig.direction === 'BUY';
 
     if (isBuy) {
-      if (analysisResult.ema20CrossBelow50) shouldInvalidate = true;
+      if (analysisResult.deathCross) shouldInvalidate = true;
       if (analysisResult.ma200 && analysisResult.currentPrice < analysisResult.ma200) shouldInvalidate = true;
       if (analysisResult.rsi && analysisResult.rsi < 50) shouldInvalidate = true;
       if (analysisResult.marketStructure === 'Bearish') shouldInvalidate = true;
       if (!analysisResult.volumeConfirmed) shouldInvalidate = true;
     } else {
-      if (analysisResult.ema20CrossAbove50) shouldInvalidate = true;
+      if (analysisResult.goldenCross) shouldInvalidate = true;
       if (analysisResult.ma200 && analysisResult.currentPrice > analysisResult.ma200) shouldInvalidate = true;
       if (analysisResult.rsi && analysisResult.rsi > 50) shouldInvalidate = true;
       if (analysisResult.marketStructure === 'Bullish') shouldInvalidate = true;
@@ -253,6 +264,10 @@ async function deleteSignal(signalId) {
   return await Signal.findByIdAndDelete(signalId);
 }
 
+async function toggleSelectSignal(signalId, isSelected) {
+  return await Signal.findByIdAndUpdate(signalId, { isSelected }, { new: true });
+}
+
 async function archiveCompleted() {
   const completed = await Signal.find({ status: { $in: ['WIN', 'LOSS', 'INVALIDATED', 'EXPIRED'] } }).lean();
   return completed;
@@ -274,4 +289,5 @@ module.exports = {
   archiveCompleted,
   clearAll,
   deleteSignal,
+  toggleSelectSignal,
 };

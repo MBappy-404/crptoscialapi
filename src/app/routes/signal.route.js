@@ -56,6 +56,16 @@ router.put(
   })
 );
 
+router.put(
+  "/:id/select",
+  catchAsync(async (req, res) => {
+    const { isSelected } = req.body;
+    const signal = await signalStore.toggleSelectSignal(req.params.id, isSelected);
+    if (!signal) return res.status(404).json(httpResponse("error", null, "Signal not found"));
+    return res.status(200).json(httpResponse("success", signal, "Signal selection updated"));
+  })
+);
+
 router.delete(
   "/clear",
   catchAsync(async (req, res) => {

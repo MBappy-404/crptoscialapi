@@ -136,6 +136,8 @@ async function generateFullAnalysis(timeframe) {
         ? c.trading.entryPrice + (c.trading.entryPrice - c.trading.stopLoss) * 2.5
         : c.trading.entryPrice - (c.trading.stopLoss - c.trading.entryPrice) * 2.5;
 
+      const isSelected = c.confidence >= 70 || c.signal.includes('STRONG');
+
       await signalStore.createSignal({
         symbol: c.symbol + 'USDT',
         timeframe,
@@ -150,6 +152,7 @@ async function generateFullAnalysis(timeframe) {
         confidence: c.confidence,
         signalScore: direction === 'BUY' ? c.scores.buy : c.scores.sell,
         riskReward: c.trading.riskReward,
+        isSelected,
       });
     } catch {}
 
@@ -242,44 +245,45 @@ async function generateFullAnalysis(timeframe) {
   return analysis;
 }
 
-async function startWorker() {
-  const timeframes = Object.keys(klineEngine.TIMEFRAME_CONFIG);
+async function startWorkerForTimeframe(tf) {
+  const config = klineEngine.TIMEFRAME_CONFIG[tf];
+  if (!config) return;
 
   while (true) {
-    for (const tf of timeframes) {
-      const loaded = klineEngine.getLoadedCount(tf);
-      if (loaded < 10) {
-        console.log(`[AnalysisEngine] Waiting for klines: ${tf} has ${loaded} coins`);
-        await sleep(30000);
-        continue;
-      }
-
-      try {
-        const analysis = await generateFullAnalysis(tf);
-        if (analysis) {
-          analysisCache.set(tf, { data: analysis, timestamp: Date.now() });
-          console.log(`[AnalysisEngine] ${tf} analysis cached`);
-        }
-      } catch (err) {
-        console.error(`[AnalysisEngine] ${tf} analysis failed:`, err.message);
-      }
-
-      const config = klineEngine.TIMEFRAME_CONFIG[tf];
-      await sleep(config.refreshMs);
+    const loaded = klineEngine.getLoadedCount(tf);
+    if (loaded < 10) {
+      console.log(`[AnalysisEngine] Waiting for klines: ${tf} has ${loaded} coins`);
+      await sleep(30000);
+      continue;
     }
+
+    try {
+      const analysis = await generateFullAnalysis(tf);
+      if (analysis) {
+        analysisCache.set(tf, { data: analysis, timestamp: Date.now() });
+        console.log(`[AnalysisEngine] ${tf} analysis cached`);
+      }
+    } catch (err) {
+      console.error(`[AnalysisEngine] ${tf} analysis failed:`, err.message);
+    }
+
+    await sleep(config.refreshMs);
   }
 }
 
 async function start() {
   if (isInitialized) return;
   isInitialized = true;
-  console.log('[AnalysisEngine] Starting background worker...');
+  console.log('[AnalysisEngine] Starting background workers...');
 
   while (!priceEngine.isReady()) {
     await sleep(5000);
   }
 
-  startWorker().catch(() => {});
+  const timeframes = Object.keys(klineEngine.TIMEFRAME_CONFIG);
+  for (const tf of timeframes) {
+    startWorkerForTimeframe(tf).catch(() => {});
+  }
 }
 
 function getAnalysis(timeframe) {
