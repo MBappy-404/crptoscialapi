@@ -5,7 +5,10 @@ const User = require("../user/user.model");
 
 const createPost = async (userId, postData) => {
   const post = await Post.create({ user: userId, ...postData });
-  return post.populate("user", "name avatar");
+  return post.populate([
+    { path: "user", select: "name avatar" },
+    { path: "collaborators", select: "name avatar" }
+  ]);
 };
 
 const getPostById = async (postId) => {

