@@ -13,6 +13,7 @@ const createNotification = async (data) => {
       from: populated.from,
       message: populated.message,
       post: populated.post?._id || populated.post,
+      commentId: populated.commentId || null,
       story: populated.story?._id || populated.story,
       read: populated.read,
       createdAt: populated.createdAt,

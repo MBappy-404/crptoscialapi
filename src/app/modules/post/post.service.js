@@ -173,24 +173,32 @@ const reactToPost = async (postId, userId, reactionType = "like") => {
   };
 };
 
-const addComment = async (postId, userId, text) => {
+const addComment = async (postId, userId, text, urlPreview) => {
   const post = await Post.findById(postId);
   if (!post) throw new ApiError(httpStatus.NOT_FOUND, "Post not found");
 
-  post.comments.push({ user: userId, text });
+  const commentData = { user: userId, text };
+  if (urlPreview) {
+    commentData.urlPreview = urlPreview;
+  }
+  post.comments.push(commentData);
   await post.save();
   await post.populate("comments.user", "name avatar");
   return post.comments[post.comments.length - 1];
 };
 
-const replyToComment = async (postId, commentId, userId, text) => {
+const replyToComment = async (postId, commentId, userId, text, urlPreview) => {
   const post = await Post.findById(postId);
   if (!post) throw new ApiError(httpStatus.NOT_FOUND, "Post not found");
 
   const parentComment = post.comments.id(commentId);
   if (!parentComment) throw new ApiError(httpStatus.NOT_FOUND, "Parent comment not found");
 
-  post.comments.push({ user: userId, text, parentId: commentId });
+  const replyData = { user: userId, text, parentId: commentId };
+  if (urlPreview) {
+    replyData.urlPreview = urlPreview;
+  }
+  post.comments.push(replyData);
   await post.save();
   await post.populate("comments.user", "name avatar");
   return post.comments[post.comments.length - 1];

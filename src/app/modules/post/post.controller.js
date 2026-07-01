@@ -38,7 +38,7 @@ const fetchUrlPreview = async (url) => {
   }
 };
 
-const sendMentionNotifications = async (text, postId, fromUserId) => {
+const sendMentionNotifications = async (text, postId, fromUserId, type = "post", commentId = "") => {
   if (!text) return [];
   const mentions = [...text.matchAll(MENTION_REGEX)].map(m => m[1].trim());
   if (mentions.length === 0) return [];
@@ -59,7 +59,8 @@ const sendMentionNotifications = async (text, postId, fromUserId) => {
         from: fromUserId,
         type: "mention",
         post: postId,
-        message: `mentioned you in a post`,
+        commentId: commentId,
+        message: type === "comment" ? `mentioned you in a comment` : `mentioned you in a post`,
       });
     }
   }
@@ -70,7 +71,7 @@ const createPost = catchAsync(async (req, res) => {
   const post = await postService.createPost(req.user.id, req.body);
   
   if (req.body.content) {
-    const mentionedIds = await sendMentionNotifications(req.body.content, post._id, req.user.id);
+    const mentionedIds = await sendMentionNotifications(req.body.content, post._id, req.user.id, "post");
     if (mentionedIds.length > 0) {
       post.mentions = mentionedIds;
       await post.save();
@@ -114,13 +115,44 @@ const reactToPost = catchAsync(async (req, res) => {
   if (result.isReacted) {
     const post = await postService.getPostById(req.params.id);
     if (post.user._id.toString() !== req.user.id) {
-      await notificationService.createNotification({
+      const Notification = require("../notification/notification.model");
+      const existingNotif = await Notification.findOne({
         user: post.user._id,
         from: req.user.id,
         type: "like",
         post: post._id,
-        message: `reacted ${type} to your post`,
       });
+
+      if (existingNotif) {
+        existingNotif.message = `reacted ${type} to your post`;
+        existingNotif.read = false;
+        await existingNotif.save();
+
+        const populated = await existingNotif.populate("from", "name avatar");
+        const { getSocket } = require("../../../config/socket_io");
+        const socket = getSocket();
+        if (socket) {
+          socket.to(`user:${post.user._id.toString()}`).emit("new-notification", {
+            _id: populated._id,
+            type: populated.type,
+            from: populated.from,
+            message: populated.message,
+            post: populated.post?._id || populated.post,
+            commentId: populated.commentId || null,
+            story: populated.story?._id || populated.story,
+            read: populated.read,
+            createdAt: populated.createdAt,
+          });
+        }
+      } else {
+        await notificationService.createNotification({
+          user: post.user._id,
+          from: req.user.id,
+          type: "like",
+          post: post._id,
+          message: `reacted ${type} to your post`,
+        });
+      }
     }
   }
 
@@ -128,16 +160,16 @@ const reactToPost = catchAsync(async (req, res) => {
 });
 
 const addComment = catchAsync(async (req, res) => {
-  const comment = await postService.addComment(req.params.id, req.user.id, req.body.text);
-
   const urlMatch = (req.body.text || "").match(URL_REGEX);
+  let urlPreview = null;
   if (urlMatch) {
     const preview = await fetchUrlPreview(urlMatch[0]);
     if (preview.title || preview.image) {
-      comment.urlPreview = preview;
-      await comment.save();
+      urlPreview = preview;
     }
   }
+
+  const comment = await postService.addComment(req.params.id, req.user.id, req.body.text, urlPreview);
 
   const post = await postService.getPostById(req.params.id);
   if (post.user._id.toString() !== req.user.id) {
@@ -146,11 +178,12 @@ const addComment = catchAsync(async (req, res) => {
       from: req.user.id,
       type: "comment",
       post: post._id,
+      commentId: comment._id,
       message: `commented: "${req.body.text.substring(0, 50)}..."`,
     });
   }
 
-  await sendMentionNotifications(req.body.text, post._id, req.user.id);
+  await sendMentionNotifications(req.body.text, post._id, req.user.id, "comment", comment._id);
 
   res.status(httpStatus.CREATED).json(httpResponse("success", comment, "Comment added."));
 });
@@ -166,16 +199,22 @@ const likeComment = catchAsync(async (req, res) => {
 });
 
 const replyToComment = catchAsync(async (req, res) => {
-  const comment = await postService.replyToComment(req.params.id, req.params.commentId, req.user.id, req.body.text);
-
   const urlMatch = (req.body.text || "").match(URL_REGEX);
+  let urlPreview = null;
   if (urlMatch) {
     const preview = await fetchUrlPreview(urlMatch[0]);
     if (preview.title || preview.image) {
-      comment.urlPreview = preview;
-      await comment.save();
+      urlPreview = preview;
     }
   }
+
+  const comment = await postService.replyToComment(
+    req.params.id,
+    req.params.commentId,
+    req.user.id,
+    req.body.text,
+    urlPreview
+  );
 
   const post = await postService.getPostById(req.params.id);
   if (post.user._id.toString() !== req.user.id) {
@@ -184,11 +223,12 @@ const replyToComment = catchAsync(async (req, res) => {
       from: req.user.id,
       type: "comment",
       post: post._id,
+      commentId: comment._id,
       message: `replied: "${req.body.text.substring(0, 50)}..."`,
     });
   }
 
-  await sendMentionNotifications(req.body.text, post._id, req.user.id);
+  await sendMentionNotifications(req.body.text, post._id, req.user.id, "comment", comment._id);
 
   res.status(httpStatus.CREATED).json(httpResponse("success", comment, "Reply added."));
 });

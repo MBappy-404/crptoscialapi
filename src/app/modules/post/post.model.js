@@ -113,6 +113,11 @@ const postSchema = mongoose.Schema(
       image: { type: String, default: "" },
       siteName: { type: String, default: "" },
     },
+    postType: {
+      type: String,
+      enum: ["post", "avatar_update", "cover_update"],
+      default: "post",
+    },
   },
   {
     timestamps: true,

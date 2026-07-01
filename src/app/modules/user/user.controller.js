@@ -9,12 +9,30 @@ const getProfile = catchAsync(async (req, res) => {
 });
 
 const updateProfile = catchAsync(async (req, res) => {
+  let oldAvatar = "";
+  try {
+    const currentUser = await userService.getUserById(req.user.id);
+    oldAvatar = currentUser?.avatar || "";
+  } catch (err) {}
+
   const user = await userService.updateUserById(req.user.id, req.body);
+  const newAvatar = req.body.avatar;
+
+  if (newAvatar && newAvatar !== oldAvatar) {
+    const Post = require("../post/post.model");
+    await Post.create({
+      user: req.user.id,
+      image: newAvatar,
+      postType: "avatar_update",
+      visibility: "public",
+    });
+  }
+
   res.status(httpStatus.OK).json(httpResponse("success", user, "Profile updated."));
 });
 
 const searchUsers = catchAsync(async (req, res) => {
-  const users = await userService.searchUsers(req.query.q, req.user.id);
+  const users = await userService.searchUsers(req.query.q, req.user.id, req.query.friendsOnly === "true");
   res.status(httpStatus.OK).json(httpResponse("success", users, ""));
 });
 

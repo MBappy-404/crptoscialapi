@@ -14,14 +14,23 @@ const updateUserById = async (userId, updateData) => {
   return user;
 };
 
-const searchUsers = async (query, currentUserId) => {
-  const users = await User.find({
+const searchUsers = async (query, currentUserId, friendsOnly = false) => {
+  const currentUser = await User.findById(currentUserId).select("friends");
+  const friendIds = currentUser?.friends || [];
+
+  const filter = {
     _id: { $ne: currentUserId },
     $or: [
       { name: { $regex: query, $options: "i" } },
       { email: { $regex: query, $options: "i" } },
     ],
-  }).select("name avatar isOnline lastSeen").limit(20);
+  };
+
+  if (friendsOnly) {
+    filter._id = { $in: friendIds };
+  }
+
+  const users = await User.find(filter).select("name avatar isOnline lastSeen").limit(20);
   return users;
 };
 
